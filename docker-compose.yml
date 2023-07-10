@@ -3,7 +3,7 @@ services:
   go-api-demo:
     container_name: go-api-demo
     build:
-      context: .
+      context: ./src
       dockerfile: Dockerfile
     tty: true
     ports: 
