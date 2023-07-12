@@ -12,5 +12,5 @@ make init
 
 ## 接続確認
 ```shell
-curl http://localhost:8080/hello
+curl http://localhost:8080/book/v1/xxxxx
 ```
