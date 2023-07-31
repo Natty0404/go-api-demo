@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"go-api-demo/handlers"
 	"go-api-demo/infrastructure/middleware"
 	"go-api-demo/interfaceadapter/controller"
 	"go-api-demo/interfaceadapter/gateway"
@@ -25,28 +26,17 @@ func run() error {
 		gateway.NewBook(),
 	)
 
+	bookHandlers := map[string]func(http.ResponseWriter, *http.Request){
+		http.MethodGet: handlers.GetBookHandler(goDemoAPI),
+		// http.MethodPost: handlers.PostBookHandler(goDemoAPI),
+		// http.MethodPut: handlers.PutBookHandler(goDemoAPI),
+		// http.MethodDelete: handlers.DeleteBookHandler(goDemoAPI),
+	}
+
 	mux.Handle("/book/v1/", http.StripPrefix("/book/v1", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			bookID := r.URL.Query().Get("book_id")
-			book, err := goDemoAPI.GetBook(r.Context(), bookID)
-			if err != nil {
-				log.Println(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(book)
-		case http.MethodPost:
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode("CreateBook success")
-		case http.MethodPut:
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode("UpdateBook success")
-		case http.MethodDelete:
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode("DeleteBook success")
-		default:
+		if handler, ok := bookHandlers[r.Method]; ok {
+			handler(w, r)
+		} else {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode("Not Found")
 		}
@@ -61,32 +51,6 @@ func main() {
 	log.Println("start server...")
 	r := gin.Default()
 	r.Use(middleware.Logger())
-
-	// /book/v1/メソッド名
-	// v1 := r.Group("/book/v1")
-	// {
-	// 	v1.GET("/GetBookList", func(context *gin.Context) {
-	// 		context.JSON(200, gin.H{
-	// 			"message": "GetBookList success",
-	// 		})
-	// 	})
-	// 	v1.POST("/CreateBook", func(context *gin.Context) {
-	// 		context.JSON(200, gin.H{
-	// 			"message": "CreateBook success",
-	// 		})
-	// 	})
-	// 	v1.PUT("/UpdateBook", func(context *gin.Context) {
-	// 		context.JSON(200, gin.H{
-	// 			"message": "UpdateBook success",
-	// 		})
-	// 	})
-	// 	v1.DELETE("/DeleteBook", func(context *gin.Context) {
-	// 		context.JSON(200, gin.H{
-	// 			"message": "DeleteBook success",
-	// 		})
-	// 	})
-	// }
-	// log.Fatal(r.Run())
 
 	if err := run(); err != nil {
 		log.Fatalf("err: %v", err)
